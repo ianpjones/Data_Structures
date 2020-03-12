@@ -1,0 +1,176 @@
+import edu.princeton.cs.algs4.Digraph;
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.LinkedQueue;
+import edu.princeton.cs.algs4.SeparateChainingHashST;
+import edu.princeton.cs.algs4.StdIn;
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.BreadthFirstDirectedPaths;
+import edu.princeton.cs.algs4.Topological;
+
+// An immutable data type for computing shortest common ancestors.
+public class ShortestCommonAncestor {
+    private Digraph G;
+    private BreadthFirstDirectedPaths g1, g2;
+
+    // Construct a ShortestCommonAncestor object given a rooted DAG.
+    public ShortestCommonAncestor(Digraph G) {
+        
+        if (G == null) {throw new NullPointerException();}
+        if (hasOrder(G) == -1) {throw new IllegalArgumentException();}  
+        this.G = new Digraph(G);
+    }
+
+    // Length of the shortest ancestral path between v and w.
+    public int length(int v, int w) {
+        if (v == null || w == null) {throw new NullPointerException();}
+        g1 = new BreadthFirstDirectedPaths(G, v);
+        g2 = new BreadthFirstDirectedPaths(G, w);
+        int minDistance = -1;
+        for (int i = 0; i < G.V(); i++) {
+            if (g1.hasPathTo(i) && g2.hasPathTo(i)) {
+                int dist = g1.distTo(i) + g2.distTo(i);
+                if (minDistance < 0 || dist < minDistance) {
+                    minDistance = dist;
+                }
+            }
+        }
+        return minDistance;
+    }
+
+    // Shortest common ancestor of vertices v and w.
+    public int ancestor(int v, int w) {
+        if (v == null || w == null) {throw new NullPointerException();}
+        if (v >= this.G.V() || v < 0 || w >= this.G.V() || w < 0) {throw new IndexOutOfBoundsException();}
+        g1 = new BreadthFirstDirectedPaths(G, v);
+        g2 = new BreadthFirstDirectedPaths(G, w);
+        int minDistance = Integer.MAX_VALUE;
+        int ancestor = -1;
+        for (int i = 0; i < G.V(); i++) {
+            if (g1.hasPathTo(i) && g2.hasPathTo(i)) {
+                int dist = g1.distTo(i) + g2.distTo(i);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    ancestor = i;
+                }
+            }
+        }
+        return ancestor;
+    }
+
+    // Length of the shortest ancestral path of vertex subsets A and B.
+    public int length(Iterable<Integer> A, Iterable<Integer> B) {
+        if (A == null || B == null) {throw new NullPointerException();}
+        if (v >= this.G.V() || v < 0 || w >= this.G.V() || w < 0) {throw new IndexOutOfBoundsException();}
+        g1 = new BreadthFirstDirectedPaths(G, A);
+        g2 = new BreadthFirstDirectedPaths(G, B);
+        int minDistance = -1;
+        for (int i = 0; i < G.V(); i++) {
+            if (g1.hasPathTo(i) && g2.hasPathTo(i)) {
+                int dist = g1.distTo(i) + g2.distTo(i);
+                if (minDistance < 0 || dist < minDistance) {
+                    minDistance = dist;
+                }
+            }
+        }
+
+        return minDistance;
+    }
+
+    // A shortest common ancestor of vertex subsets A and B.
+    public int ancestor(Iterable<Integer> A, Iterable<Integer> B) {
+        if (A == null || B == null) {throw new NullPointerException();}
+        g1 = new BreadthFirstDirectedPaths(G, A);
+        g2 = new BreadthFirstDirectedPaths(G, B);
+        int minDistance = Integer.MAX_VALUE;
+        int ancestor = -1;
+        for (int i = 0; i < G.V(); i++) {
+            if (g1.hasPathTo(i) && g2.hasPathTo(i)) {
+                int dist = g1.distTo(i) + g2.distTo(i);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    ancestor = i;
+                }
+            }
+        }
+        return ancestor;
+    }
+
+    // Helper: Return a map of vertices reachable from v and their 
+    // respective shortest distances from v.
+    private SeparateChainingHashST<Integer, Integer> distFrom(int v) {
+        if (v == null) {throw new NullPointerException();}
+        g1 = new BreadthFirstDirectedPaths(G, v);
+        SeparateChainingHashST st = new SeparateChainingHashST<Integer, Integer>();
+
+        int minDistance = -1;
+        for (int i = 0; i < G.V(); i++) {
+            if (g1.hasPathTo(i)) {
+                int dist = g1.distTo(v);
+                if (minDistance < 0 || dist < minDistance) {
+                    minDistance = dist;
+                }
+                
+            }
+            st.put(i, minDistance);
+        }
+        
+        return st;
+            
+    }
+
+    // Helper: Return an array consisting of a shortest common ancestor a 
+    // of vertex subsets A and B, and vertex v from A and vertex w from B 
+    // such that the path v-a-w is the shortest ancestral path of A and B.
+    private int[] triad(Iterable<Integer> A, Iterable<Integer> B) {
+        if (A == null || B == null) {throw new NullPointerException();}
+
+        int a = ancestor(A, B);
+        g1 = new BreadthFirstDirectedPaths(G, A);
+        g2 = new BreadthFirstDirectedPaths(G, B);
+        LinkedQueue<Integer> queueA = new LinkedQueue<Integer>();
+        LinkedQueue<Integer> queueB = new LinkedQueue<Integer>();
+        int minDistanceA = -1;
+        int minDistanceB = -1;
+        for (int i = 0; i < G.V(); i++) {
+            if (g1.hasPathTo(i)) {
+                int dist = g1.distTo(a);
+                if (minDistanceA < 0 || dist < minDistanceA) {
+                    minDistanceA = dist;
+
+                }
+            }
+            for (int j = 0; j < G.V(); j++) {
+                if (g2.hasPathTo(i)) {
+                    int dist = g2.distTo(a);
+                    if (minDistanceB < 0 || dist < minDistanceB) {
+                        minDistanceB = dist;
+                    }
+                } 
+            }
+        }
+
+        int v = minDistanceA;
+        int w = minDistanceB;
+
+        int[] array = {a, v, w};
+        return array;
+        //Return a 3-element array consisting of a shortest common ancestor a 
+        //of vertex subsets A and B, a vertex v from A, and a vertex w from B 
+        //such that the path v-a-w is the shortest ancestral path of A and B; 
+        //use int length(int v, int w) and int ancestor(int v, int w) to implement 
+        //this method
+    }
+
+    public static void main(String[] args) {
+        In in = new In(args[0]);
+        Digraph G = new Digraph(in);
+        ShortestCommonAncestor sca = new ShortestCommonAncestor(G);
+        while (!StdIn.isEmpty()) {
+            int v = StdIn.readInt();
+            int w = StdIn.readInt();
+            int length   = sca.length(v, w);
+            int ancestor = sca.ancestor(v, w);
+            StdOut.printf("length = %d, ancestor = %d\n", length, ancestor);
+        }
+    }
+}
