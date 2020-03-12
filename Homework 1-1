@@ -1,0 +1,134 @@
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.WeightedQuickUnionUF;
+
+// Models an N-by-N percolation system.
+public class New_Percolation {
+    private WeightedQuickUnionUF uf;
+    private WeightedQuickUnionUF backwash;
+    private int sites; 			//number of open sites
+    private int[][] grid;  		//access to component id (site indexed)
+    private int n;				//stores number of sites
+    private int source;			//virtual site from which the percolation starts
+    private int sink;			//virtual site to which the percolation goes
+    // Create an N-by-N grid, with all sites blocked.
+    public New_Percolation(int N) {
+    	n = N;
+    	if (n <= 0) 
+    		throw new IllegalArgumentException ("Sorry. The size of the array must be larger than 0.");
+        uf = new WeightedQuickUnionUF(n * n + 2);
+        backwash = new WeightedQuickUnionUF(n * n + 1);
+        grid = new int[n][n];
+        //connect source with the top row and the sink with the bottom row
+        int source = 0;
+    	int sink = (n * n) + 1;
+		for (int x = 0; x < n; x++) {
+          uf.union(encode(0, x), source);
+          uf.union(encode(n - 1, x), sink);
+          backwash.union(encode(0, x), source);
+        } 
+
+    }
+
+    // Open site (i, j) if it is not open already.
+	public void open(int i, int j, int k) {
+		if (i < 0 || i > (n - 1) || j < 0 || j > (n - 1))
+			throw new IndexOutOfBoundsException("Sorry. The argument must be within the prescribed range.");
+		if (isOpen(i, j) == false) {
+		
+		grid[i][j] = k;
+		sites++;
+
+		//connects to site above
+		if ((i - 1 >= 0) && grid[i - 1][j] == k) {
+			uf.union(encode(i, j), encode(i - 1, j));
+			backwash.union(encode(i, j), encode(i - 1, j));
+		} 
+		//connects to site to the bottom
+		if ((i + 1 < n) && grid[i + 1][j] == k) {
+			uf.union(encode(i, j), encode(i + 1, j));
+			backwash.union(encode(i, j), encode(i + 1, j));
+		}
+		//connects to site to the left 
+		if ((j - 1 >= 0) && grid[i][j - 1] == k) {
+			uf.union(encode(i, j), encode(i, j - 1));
+			backwash.union(encode(i, j), encode(i, j - 1));
+		}
+		//connects to site to the right
+		if ((j + 1 > n) && grid[i][j + 1] == k) {
+			uf.union(encode(i, j), encode(i, j + 1));
+			backwash.union(encode(i, j), encode(i, j + 1));
+		}
+
+		}
+	}
+
+
+    // Is site (i, j) open?
+    public boolean isOpen(int i, int j) {
+       	if (i < 0 || i > (n - 1) || j < 0 || j > (n - 1))
+    		throw new IndexOutOfBoundsException("Sorry. The argument must be within the prescribed range.");	
+    	else if (grid[i][j] != 0)
+    		return true;
+    	else
+    		return false;
+    }
+
+    // Is site (i, j) full?
+    public boolean isFull(int i, int j) {
+       	if (i < 0 || i > (n - 1) || j < 0 || j > (n - 1))
+    		throw new IndexOutOfBoundsException("Sorry. The argument must be within the prescribed range.");	
+    	if (isOpen(i, j) && backwash.connected(source, encode(i, j)))
+    		return true;
+    	else
+    		return false;
+    }
+
+    // Number of open sites.
+    public int numberOfOpenSites() {
+        return sites;
+    }
+
+    // Does the system percolate?
+    public boolean percolates() {
+    	int sink = (n * n) + 1;
+        if (sites > 0 && uf.connected(source, sink))
+        	return true;
+        else
+        	return false;
+    }
+
+    // An integer ID (1...N) for site (i, j).
+    private int encode(int i, int j) {
+		return (i * n) + (j + 1);
+    }
+
+  // Test client. [DO NOT EDIT]
+    public static void main(String[] args) {
+        String filename = args[0];
+        In in = new In(filename);
+        int N = in.readInt();
+        New_Percolation perc = new New_Percolation(N);
+        while (!in.isEmpty()) {
+            int i = in.readInt();
+            int j = in.readInt();
+            int k = in.readInt();
+            perc.open(i, j, k);
+        }
+        StdOut.println(perc.numberOfOpenSites() + " open sites");
+        if (perc.percolates()) {
+            StdOut.println("percolates");
+        }
+        else {
+            StdOut.println("does not percolate");
+        }
+        
+        // Check if site (i, j) optionally specified on the command line
+        // is full.
+        if (args.length == 3) {
+            int i = Integer.parseInt(args[1]);
+            int j = Integer.parseInt(args[2]);
+            StdOut.println(perc.isFull(i, j));
+        }
+    }
+}
