@@ -1,0 +1,110 @@
+import edu.princeton.cs.algs4.Digraph;
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.RedBlackBST;
+import edu.princeton.cs.algs4.SET;
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.*;
+
+// An immutable WordNet data type.
+public class WordNet {
+    private RedBlackBST<String, SET<Integer>> st;
+    private RedBlackBST<Integer, String> rst;
+    private Digraph G;
+    private ShortestCommonAncestor sca;
+    
+    // Construct a WordNet object given the names of the input (synset and
+    // hypernym) files.
+    public WordNet(String synsets, String hypernyms) {
+        if (synsets == null || hypernyms == null) { throw new NullPointerException(); }
+        //read in CSV file
+        In inSynsets = new In(synsets);
+        In inHypernyms = new In(hypernyms);
+
+        this.st = new RedBlackBST<String, SET<Integer>>();
+        this.rst = new RedBlackBST<Integer, String>();
+
+        while (inSynsets.hasNextLine()) {
+
+            String line = inSynsets.readLine();
+            String[] tokens = line.split(",");
+            int key = Integer.parseInt(tokens[0]);
+            String[] val = tokens[1].split(" ");
+
+            SET<String> set = new SET<String>();
+
+        
+            this.rst.put(key, tokens[1]);
+            for (int i = 0; i < val.length; i++)
+
+                if (!st.contains(val[i])) {st.put(val[i], new SET<Integer>());}
+                else {
+                    SET<Integer> newSet = new SET<Integer>();
+                    newSet.add(key);
+                    st.put(val[i], newSet);
+                }
+
+        }
+
+        int V = st.size();
+        this.G = new Digraph(V);
+
+        while (inHypernyms.hasNextLine()) {
+        String lineHypernyms = inHypernyms.readLine();
+        String[] tokens = lineHypernyms.split(",");
+        int source = Integer.parseInt(tokens[0]);
+            for (int i = 1; i < tokens.length; i++) {
+                int distance = Integer.parseInt(tokens[i]);
+
+                    G.addEdge(source, distance);
+            }
+
+        }
+       this.sca = new ShortestCommonAncestor(G);
+    }
+
+    // All WordNet nouns.
+    public Iterable<String> nouns() {
+        return st.keys();
+    }
+
+    // Is the word a WordNet noun?
+    public boolean isNoun(String word) {
+        if (word == null) { throw new NullPointerException(); }
+        return st.contains(word);
+    }
+
+    // A synset that is a shortest common ancestor of noun1 and noun2.
+    public String sca(String noun1, String noun2) {
+        if (noun1 == null || noun2 == null) throw new NullPointerException();
+        if (!isNoun(noun1) || !isNoun(noun2)) throw new IllegalArgumentException();
+        int ancestor = sca.ancestor(st.get(noun1), st.get(noun2));
+        return rst.get(ancestor).toString();
+    }
+
+
+    // Distance between noun1 and noun2.
+    public int distance(String noun1, String noun2) {
+        if (noun1 == null || noun2 == null) throw new NullPointerException();
+        if (!isNoun(noun1) || !isNoun(noun2)) throw new IllegalArgumentException();
+        return sca.length(st.get(noun1), st.get(noun2));
+    }
+    
+    public static void main(String[] args) {
+        WordNet wordnet = new WordNet(args[0], args[1]);
+        String word1 = args[2];
+        String word2 = args[3];        
+        int nouns = 0;
+        for (String noun : wordnet.nouns()) {
+            nouns++;
+        }
+        StdOut.println("# of nouns = " + nouns);
+        StdOut.println("isNoun(" + word1 + ") = " + wordnet.isNoun(word1));
+        StdOut.println("isNoun(" + word2 + ") = " + wordnet.isNoun(word2));
+        StdOut.println("isNoun(" + (word1 + " " + word2) + ") = "
+                       + wordnet.isNoun(word1 + " " + word2));
+        StdOut.println("sca(" + word1 + ", " + word2 + ") = "
+                       + wordnet.sca(word1, word2));
+        StdOut.println("distance(" + word1 + ", " + word2 + ") = "
+                       + wordnet.distance(word1, word2));
+    }
+}
