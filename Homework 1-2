@@ -1,0 +1,86 @@
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.StdRandom;
+import edu.princeton.cs.algs4.StdStats;
+
+// Estimates percolation threshold for an N-by-N percolation system.
+public class New_PercolationStats {
+    private int t;                          //number of trials
+    private double[] results;               //array filled with total number of results
+    private double[] resultsPercolated;     //array filled with only good results
+    private New_Percolation percolation;
+    private int percolatedCount;            //counter for how many trials percolated
+
+    // Perform T independent experiments (Monte Carlo simulations) on an 
+    // N-by-N grid.
+    public New_PercolationStats(int N, int T) {
+        if (N <= 0 || T <= 0) 
+            throw new IllegalArgumentException();
+        t = T;
+        results = new double[t];
+        for (int x = 0; x < t; x++) {
+            percolation = new New_Percolation(N);
+            while(!percolation.percolates() && (percolation.numberOfOpenSites() < (N*N))) {  //Tests to see if the system percoltes and ends
+                                                                                             //the while loop if all the sites are opened
+                int i = StdRandom.uniform(0, N);
+                int j = StdRandom.uniform(0, N);
+                int k = StdRandom.uniform(1, 4);
+                if (percolation.isOpen(i, j) == false) {
+                    percolation.open(i, j, k);
+                    percolation.numberOfOpenSites();
+                }
+            }
+            if (percolation.percolates()){
+            double result = (double) percolation.numberOfOpenSites() / (N * N);
+            results[x] = result;
+            percolatedCount++;
+            }
+
+            //ignores cases where all sites are opened and the system doesn't percolate; resizes array
+        }
+            //int ignoreCount = 0;
+            resultsPercolated = new double [percolatedCount];
+            for (int y = 0; y < t; y++){
+                if (results[y] == 0){
+                //    ignoreCount++;
+                }
+                else{
+                    resultsPercolated[y - (t - percolatedCount)] = results[y];
+                }
+            }
+            if (resultsPercolated.length == 0){
+                StdOut.println("Sorry none of the tests were successful.");
+            }
+    }
+
+    
+    // Sample mean of percolation threshold.
+    public double mean() {
+        return StdStats.mean(resultsPercolated);
+    }
+
+    // Sample standard deviation of percolation threshold.
+    public double stddev() {
+        return StdStats.stddev(resultsPercolated);
+    }
+
+    // Low endpoint of the 95% confidence interval.
+    public double confidenceLow() {
+        return mean()-((1.96*stddev())/Math.sqrt(percolatedCount));
+    }
+
+    // High endpoint of the 95% confidence interval.
+    public double confidenceHigh() {
+        return mean()+((1.96*stddev())/Math.sqrt(percolatedCount));
+    }
+
+    // Test client. [DO NOT EDIT]
+    public static void main(String[] args) {
+        int N = Integer.parseInt(args[0]);
+        int T = Integer.parseInt(args[1]);
+        New_PercolationStats stats = new New_PercolationStats(N, T);
+        StdOut.printf("mean           = %f\n", stats.mean());
+        StdOut.printf("stddev         = %f\n", stats.stddev());
+        StdOut.printf("confidenceLow  = %f\n", stats.confidenceLow());
+        StdOut.printf("confidenceHigh = %f\n", stats.confidenceHigh());
+    }
+}
